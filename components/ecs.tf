@@ -58,30 +58,6 @@ resource "aws_security_group_rule" "falafel_egress" {
   cidr_blocks       = ["0.0.0.0/0"]
 }
 
-
-resource "aws_iam_role" "ecs_execution_role" {
-  name = "ecs_execution_role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Action = "sts:AssumeRole",
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        },
-        Effect = "Allow",
-        Sid    = ""
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_execution_role_attachment" {
-  role       = aws_iam_role.ecs_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
 resource "aws_ecs_task_definition" "falafelapi" {
   family                   = "falafelapi"
   network_mode             = "awsvpc"
@@ -145,7 +121,7 @@ resource "aws_ecs_service" "falafelapi" {
     aws_lb_listener.falafel_listener_5050
   ]
 
-  desired_count = 1
+  desired_count = 3
 
   lifecycle {
     create_before_destroy = true
