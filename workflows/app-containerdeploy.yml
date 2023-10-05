@@ -1,0 +1,73 @@
+name: Test and ECR
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'application/**'
+    branches:
+      - '**'
+  pull_request:
+    paths:
+      - 'application/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install dependencies
+      working-directory: ./application
+      run: npm ci
+    - name: Run tests
+      working-directory: ./application
+      run: npm test
+
+  build-and-push:
+    needs: test
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/test')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    - name: Set unique tag
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "DOCKER_TAG=${{ github.sha }}" >> $GITHUB_ENV
+        elif [[ "${{ github.ref }}" == refs/heads/test* ]]; then
+          echo "DOCKER_TAG=${{ github.sha }}-test" >> $GITHUB_ENV
+        else
+          echo "Tagging not required as this is not test or main push"
+        fi
+    - name: Build, tag, and push image to Amazon ECR
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/test*')
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      run: |
+        cd application
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$DOCKER_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$DOCKER_TAG
+
+        # Push with 'latest' tag if the branch is 'main'
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$DOCKER_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        fi
