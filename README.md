@@ -45,7 +45,7 @@ the following GHA secrets are required to run the deployments
 AWS_ACCESS_KEY\
 AWS_SECRET_ACCESS_KEY\
 AWS_REGION\
-ECR_REPOSITORY\
+ECR_REPOSITORY
 
 ## Design decisions
 
