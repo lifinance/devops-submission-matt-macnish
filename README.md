@@ -22,8 +22,8 @@ After the Docker image of the application is available in the ECR, rerun the Ter
 
 ## Quick Links
 
-- [Terraform Infrastructure Setup Guide](components\README.md)
-- [Application Dockerization and ECR Deployment Guide](application\README.md)
+- [Terraform Infrastructure Setup Guide](https://github.com/Pretendfriend/Falafel-API-Server/blob/a005238977a6bb14f39a9830e3c883c1996b0be4/components/README.md)
+- [Application Dockerization and ECR Deployment Guide](https://github.com/Pretendfriend/Falafel-API-Server/blob/a005238977a6bb14f39a9830e3c883c1996b0be4/application/README.md)
 
 ## Future Plans:
 
