@@ -96,9 +96,54 @@ npm test
 
 The tests utilize the `supertest` library to simulate HTTP requests to our Express server and validate responses. AWS DynamoDB interactions are mocked using Jest's mock functions, so tests do not interact with the real database.
 
+
 ### Automated Testing with GitHub Actions:
 
 Every push or pull request modifying content within the `./application` directory triggers the GitHub Actions workflow, which runs the tests and reports results directly in your GitHub repository.
+
+### Post-Implementation Tests
+
+#### 1. Check Server Status
+
+Run the following command to verify the server status:
+
+\```bash
+curl url:3000/status
+\```
+**Expected**: Server status.
+
+#### 2. Posting Data to `/data` Endpoint
+
+**Request**:
+
+Use the following `curl` command to post data:
+
+\```bash
+curl -X POST -H "Content-Type: application/json" -d '{
+    "falafel_rating": 4.5,
+    "falafel_restaurant": "Tasty Falafel Hub-2",
+    "falafel_time": "2023-10-03T14:30:00Z",
+    "falafel_cost": 5.99
+}' url:3000/data
+\```
+
+**Expected**: Appropriate success response indicating the data has been saved/processed. The response should also reply with the data submitted.
+
+#### 3. Retrieve Data by Restaurant Name
+
+**Request**:
+
+To get data by the restaurant name, use:
+
+\```bash
+curl "url:3000/data?falafel_restaurant=<Restaurant Name>"
+\```
+
+Replace `<Restaurant Name>` with the actual name of the restaurant you wish to query.
+
+**Expected**: JSON response containing the details related to the specified restaurant.
+
+
 
 ## Additional Notes:
 
