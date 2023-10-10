@@ -57,7 +57,7 @@ app.get('/data', (req, res) => {
     };
     DocumentClient.query(params, (err, data) => {
         if (err) {
-            return res.status(500).json({ error: 'Failed to fetch data from DynamoDB' });
+            return res.status(500).json({ error: `Failed to fetch data from DynamoDB: ${err.message}` });
         }
         res.json(data.Items);
     });
