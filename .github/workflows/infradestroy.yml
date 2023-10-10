@@ -91,7 +91,7 @@
           cd components
           terraform init
 
-      - name: Terraform Apply
+      - name: Terraform Destroy
         run: |
           cd components
           terraform destroy -auto-approve
