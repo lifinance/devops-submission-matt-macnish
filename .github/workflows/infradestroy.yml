@@ -1,0 +1,97 @@
+  name: Infra CI/CD
+
+  on:
+    workflow_dispatch:
+    push:
+      paths:
+        - 'components/**'
+
+  jobs:
+    terraform_checks_and_plan:
+      name: Terraform Format, Lint, Security Checks & Plan
+      runs-on: ubuntu-latest
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.6
+
+      - name: Setup AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Format Check
+        run: |
+          cd components
+          terraform fmt -check
+
+      - name: Install tflint
+        run: |
+          wget https://github.com/terraform-linters/tflint/releases/download/v0.29.0/tflint_linux_amd64.zip
+          unzip tflint_linux_amd64.zip
+          sudo mv tflint /usr/bin/
+
+      - name: Terraform Lint Check
+        run: |
+          cd components
+          tflint
+
+      - name: Install tfsec
+        run: |
+          wget https://github.com/aquasecurity/tfsec/releases/download/v0.58.14/tfsec-linux-amd64
+          chmod +x tfsec-linux-amd64
+          sudo mv tfsec-linux-amd64 /usr/local/bin/tfsec
+
+      - name: Terraform Security Check
+        run: |
+          cd components
+          tfsec --soft-fail .
+          echo "Soft fail set for demo purposes in this repo, in real world all errors would be assesed, corrected and or added to a risk register and signed off."
+
+
+      - name: Terraform Initialization
+        run: |
+          cd components
+          terraform init
+
+      - name: Terraform Plan
+        run: |
+          cd components
+          terraform plan
+
+    terraform_destroy:
+      if: github.ref == 'refs/heads/main' # This ensures apply only runs for the main branch
+      name: Terraform Apply
+      needs: terraform_checks_and_plan
+      runs-on: ubuntu-latest
+      steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.6
+
+      - name: Setup AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Initialization
+        run: |
+          cd components
+          terraform init
+
+      - name: Terraform Apply
+        run: |
+          cd components
+          terraform destroy -auto-approve
